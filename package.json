@@ -1,0 +1,17 @@
+{
+  "name": "ecommerce-composite-api",
+  "version": "1.0.0",
+  "description": "API compuesta y tablero web para el detalle de un producto. Práctica de Desarrollo Web Integral, UTCH.",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  },
+  "license": "MIT"
+}

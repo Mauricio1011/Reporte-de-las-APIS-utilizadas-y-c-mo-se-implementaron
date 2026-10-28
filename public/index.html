@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>E-Commerce Gateway · Detalle de producto</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23241c16'/%3E%3Cpath d='M8 22V10h3.2l4.8 7.4L20.8 10H24v12h-2.6v-7.2L17.2 22h-2.4l-4.2-7.2V22H8z' fill='%23f3e6d4'/%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560;9..144,650&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-inner">
+        <div class="brand">
+          <span class="mark">UTCH</span>
+          <div>
+            <p class="eyebrow">Desarrollo Web Integral · Unidad 3</p>
+            <h1>E-Commerce Gateway</h1>
+          </div>
+        </div>
+        <a class="docs-link" href="/docs.html">Contrato OpenAPI</a>
+        <p class="lede">
+          La ficha del producto sale de una sola petición. El gateway consulta catálogo, inventario y tipo de cambio, y entrega un JSON listo para pintar.
+        </p>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="catalog" aria-labelledby="catalog-title">
+        <div class="section-head">
+          <h2 id="catalog-title">Catálogo</h2>
+          <p>Elige un producto. El detalle no vuelve a pedir tres servicios.</p>
+        </div>
+        <p id="catalog-status" class="quiet" role="status">Cargando productos…</p>
+        <ul id="product-list" class="product-list"></ul>
+      </section>
+
+      <section class="sheet" aria-labelledby="sheet-title">
+        <div class="section-head">
+          <h2 id="sheet-title">Ficha unificada</h2>
+          <p id="request-line" class="request-line">Selecciona un producto del catálogo.</p>
+        </div>
+        <div id="detail" aria-live="polite">
+          <div class="empty">
+            <p>Aquí aparece el contrato que devuelve <code>GET /api/v1/product-summary/{id}</code>.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>

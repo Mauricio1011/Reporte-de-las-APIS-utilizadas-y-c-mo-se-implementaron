@@ -1,0 +1,1 @@
+{"product_id":"P-999","status":"ERROR","error_code":"PRODUCT_NOT_FOUND","message":"No existe el producto P-999","errors":[{"service":"catalog","code":"NOT_FOUND","message":"No existe el producto P-999"}],"timing_ms":{"catalog":3,"inventory":3,"currency":0,"parallel_total":3,"sequential_estimate":6}}

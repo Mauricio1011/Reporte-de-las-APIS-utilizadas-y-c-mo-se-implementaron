@@ -1,0 +1,153 @@
+{
+  "info": {
+    "name": "E-Commerce Composite API",
+    "description": "Peticiones de la práctica: catálogo, inventario, Frankfurter y API compuesta.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "gateway", "value": "http://127.0.0.1:3000" },
+    { "key": "catalog", "value": "http://127.0.0.1:3001" },
+    { "key": "inventory", "value": "http://127.0.0.1:3002" },
+    { "key": "productId", "value": "P-101" }
+  ],
+  "item": [
+    {
+      "name": "1. Catálogo de productos",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": "{{catalog}}/microservices/products/{{productId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('El catálogo responde 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('Trae precio base en USD', () => {",
+              "  pm.expect(body).to.include.keys('id', 'title', 'price_usd');",
+              "  pm.expect(body.price_usd).to.be.a('number');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Inventario y almacén",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": "{{inventory}}/microservices/inventory/{{productId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('El inventario responde 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('Informa unidades y estado', () => {",
+              "  pm.expect(body).to.include.keys('available_units', 'stock_status', 'warehouse');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Frankfurter USD a MXN",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": "https://api.frankfurter.app/latest?from=USD&to=MXN"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Frankfurter responde 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('Incluye la tasa MXN', () => pm.expect(body.rates.MXN).to.be.a('number'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Composite API - resumen",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": "{{gateway}}/api/v1/product-summary/{{productId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('La compuesta responde 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('Contrato unificado', () => {",
+              "  pm.expect(body).to.include.keys('product_id','title','price_usd','price_mxn','stock_status','available_units','currency_conversion_source','status');",
+              "  pm.expect(body.status).to.eql('SUCCESS');",
+              "  pm.expect(body.price_mxn).to.be.a('number');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Composite API - divisa caída",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": "{{gateway}}/api/v1/product-summary/{{productId}}?fail=currency"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 200 parcial', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('El producto sigue visible sin precio MXN', () => {",
+              "  pm.expect(body.status).to.eql('PARTIAL');",
+              "  pm.expect(body.price_mxn).to.eql(null);",
+              "  pm.expect(body.title).to.be.a('string');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Composite API - producto inexistente",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": "{{gateway}}/api/v1/product-summary/P-999"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 404', () => pm.response.to.have.status(404));",
+              "pm.test('Estado ERROR', () => pm.expect(pm.response.json().status).to.eql('ERROR'));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

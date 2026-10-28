@@ -1,0 +1,286 @@
+openapi: 3.0.3
+info:
+  title: E-Commerce Gateway
+  version: 1.0.0
+  description: |
+    API compuesta para el detalle de un producto.
+    Orquesta el catálogo, el inventario y el tipo de cambio USD/MXN,
+    y entrega un solo contrato JSON al frontend.
+servers:
+  - url: http://127.0.0.1:3000
+    description: Gateway local
+  - url: http://127.0.0.1:3001
+    description: Microservicio de catálogo
+  - url: http://127.0.0.1:3002
+    description: Microservicio de inventario
+tags:
+  - name: Compuesta
+  - name: Catálogo
+  - name: Inventario
+paths:
+  /api/v1/product-summary/{id}:
+    get:
+      tags: [Compuesta]
+      operationId: getProductSummary
+      summary: Resumen unificado de un producto
+      description: |
+        Consulta en paralelo el catálogo, el inventario y la tasa USD/MXN.
+        `status` vale SUCCESS si las tres responden, PARTIAL si el producto
+        existe pero inventario o divisa fallan, y ERROR si el catálogo no puede servir el producto.
+      parameters:
+        - $ref: "#/components/parameters/ProductId"
+        - name: fail
+          in: query
+          required: false
+          description: Solo en desarrollo. Simula la caída de una pierna (`catalog`, `inventory` o `currency`).
+          schema:
+            type: string
+            enum: [catalog, inventory, currency]
+      responses:
+        "200":
+          description: Resumen completo o parcial
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductSummary"
+              example:
+                product_id: P-101
+                title: Laptop Gamer XYZ
+                description: Portátil de 16 pulgadas con procesador de última generación.
+                category: Cómputo
+                price_usd: 1200
+                price_mxn: 20400
+                exchange_rate: 17
+                exchange_date: "2026-10-28"
+                stock_status: IN_STOCK
+                available_units: 15
+                warehouse: Chihuahua Norte
+                location: Pasillo A-12
+                estimated_delivery_days: 2
+                currency_conversion_source: Frankfurter External API
+                status: SUCCESS
+                errors: []
+        "404":
+          description: El catálogo no tiene ese producto
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorSummary"
+        "502":
+          description: El catálogo no respondió
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorSummary"
+  /api/v1/products:
+    get:
+      tags: [Compuesta]
+      operationId: listProducts
+      summary: Listado del catálogo, reenviado por el gateway
+      responses:
+        "200":
+          description: Productos publicados
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductList"
+        "502":
+          description: El catálogo no respondió
+  /microservices/products/{id}:
+    get:
+      tags: [Catálogo]
+      operationId: getProduct
+      servers:
+        - url: http://127.0.0.1:3001
+      summary: Ficha del producto y precio base en USD
+      parameters:
+        - $ref: "#/components/parameters/ProductId"
+      responses:
+        "200":
+          description: Producto encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "404":
+          description: Producto inexistente
+  /microservices/products:
+    get:
+      tags: [Catálogo]
+      operationId: listCatalog
+      servers:
+        - url: http://127.0.0.1:3001
+      summary: Catálogo completo
+      responses:
+        "200":
+          description: Listado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductList"
+  /microservices/inventory/{id}:
+    get:
+      tags: [Inventario]
+      operationId: getInventory
+      servers:
+        - url: http://127.0.0.1:3002
+      summary: Stock, almacén y entrega estimada
+      parameters:
+        - $ref: "#/components/parameters/ProductId"
+      responses:
+        "200":
+          description: Existencia encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Inventory"
+        "404":
+          description: Sin registro de inventario
+components:
+  parameters:
+    ProductId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      example: P-101
+  schemas:
+    Product:
+      type: object
+      required: [id, title, description, category, price_usd]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        price_usd:
+          type: number
+          format: double
+    ProductList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Product"
+    Inventory:
+      type: object
+      required: [product_id, available_units, stock_status, warehouse, location]
+      properties:
+        product_id:
+          type: string
+        available_units:
+          type: integer
+        stock_status:
+          type: string
+          enum: [IN_STOCK, LOW_STOCK, OUT_OF_STOCK]
+        warehouse:
+          type: string
+        location:
+          type: string
+        estimated_delivery_days:
+          type: integer
+          nullable: true
+    ProductSummary:
+      type: object
+      required:
+        - product_id
+        - title
+        - price_usd
+        - price_mxn
+        - stock_status
+        - available_units
+        - currency_conversion_source
+        - status
+      properties:
+        product_id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        price_usd:
+          type: number
+        price_mxn:
+          type: number
+          nullable: true
+        exchange_rate:
+          type: number
+          nullable: true
+        exchange_date:
+          type: string
+          nullable: true
+        stock_status:
+          type: string
+          enum: [IN_STOCK, LOW_STOCK, OUT_OF_STOCK, UNKNOWN]
+        available_units:
+          type: integer
+          nullable: true
+        warehouse:
+          type: string
+          nullable: true
+        location:
+          type: string
+          nullable: true
+        estimated_delivery_days:
+          type: integer
+          nullable: true
+        currency_conversion_source:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [SUCCESS, PARTIAL]
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServiceError"
+        timing_ms:
+          $ref: "#/components/schemas/Timing"
+    ErrorSummary:
+      type: object
+      required: [product_id, status, message]
+      properties:
+        product_id:
+          type: string
+        status:
+          type: string
+          enum: [ERROR]
+        error_code:
+          type: string
+        message:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServiceError"
+    ServiceError:
+      type: object
+      properties:
+        service:
+          type: string
+        code:
+          type: string
+        message:
+          type: string
+    Timing:
+      type: object
+      properties:
+        catalog:
+          type: integer
+        inventory:
+          type: integer
+        currency:
+          type: integer
+        parallel_total:
+          type: integer
+        sequential_estimate:
+          type: integer
